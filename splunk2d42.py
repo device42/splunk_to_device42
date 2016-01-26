@@ -13,9 +13,9 @@ USERNAME    = "admin"
 PASSWORD    = "P@ssw0rd"
 TIME_FRAME  = "-24h"
 DEBUG       = True
-VERBOSE     = False
+VERBOSE     = True
 
-D42_URL     = 'https://192.168.3.30/'
+D42_URL     = 'https://192.168.3.30'
 D42_USER    = 'admin'
 D42_PASS    = 'adm!nd42'
 
@@ -68,10 +68,11 @@ class Splunker():
                         device_name = result['host']
                         host_data.update({'name':device_name})
                         raw =  result['_raw']
+                        if self.verbose:
+                            print '\n\n'+'='*80
                         raw_data = self.process_raw_data(raw)
                         if raw_data:
                             host_data.update(raw_data)
-
                 nic_data = self.get_nic_data(host_name)
                 if nic_data:
                     host_data.update(nic_data)
@@ -80,8 +81,8 @@ class Splunker():
                     host_data.update(os_name)
 
                 if self.verbose:
-                    print '\n'+'='*50
-                    print json.dumps(host_data, indent=4, sort_keys=True)
+                    print '\n' + '-' * 30
+                    print json.dumps(host_data, indent=4 , sort_keys=True)
                 if host_data:
                     d42.upload_device(host_data)
 
@@ -91,6 +92,8 @@ class Splunker():
             splitted = rec.split('  ')
             key = splitted[0].lower()
             value = ' '.join(splitted[1:]).strip()
+            if self.verbose:
+                print '{0:21} {1}'.format(key,value.strip())
             if key == 'cpu_type':
                 try:
                     cpupower = int(float(value.split('@')[1].lower().strip('ghz').strip()) * 1024)
@@ -128,6 +131,8 @@ class Splunker():
             if isinstance(result, dict):
                 try:
                     nic_name,nic_mac, nic_ipv6, nic_ipv6 = result['_raw'].split()[0:4]
+                    if self.verbose:
+                        print result['_raw'].split()[0:4]
                     nic_data.update({'macaddress':nic_mac})
                 except:
                     pass
@@ -139,8 +144,9 @@ class Splunker():
         reader  = results.ResultsReader(res_ex)
         for result in reader:
             if isinstance(result, dict):
-                #print json.dumps(result, indent=4)
                 if 'os' in result:
+                    if self.verbose:
+                        print {'os': result['os']}
                     return {'os': result['os']}
 
 
