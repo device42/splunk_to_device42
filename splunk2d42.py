@@ -1,40 +1,43 @@
 #! /usr/bin/env python
 
+import ConfigParser
 import json
+import logging
+import os
+import sys
 
 import splunklib.client as client
 import splunklib.results as results
 
 from util_uploader import Rest
 
-HOST        = "splunk.levaja.lab"
-PORT        = 8089
-USERNAME    = "admin"
-PASSWORD    = "P@ssw0rd"
-TIME_FRAME  = "-24h"
-DEBUG       = True
-VERBOSE     = True
+APP_DIR    = os.path.abspath(os.path.dirname(__file__))
+CONFIGFILE = os.path.join(APP_DIR, 'app_config.cfg')
 
-D42_URL     = 'https://192.168.3.30'
-D42_USER    = 'admin'
-D42_PASS    = 'adm!nd42'
 
 class Device42():
-    def __init__(self, url, user, pwd, debug):
-        self.rest = Rest(url, user, pwd, debug)
+    def __init__(self, url, user, pwd, debug, verbose, dry_run, logger):
+        self.rest   = Rest(url, user, pwd, debug, verbose, dry_run, logger)
+        self.debug  = debug
+        self.logger = logger
 
     def upload_device(self, data):
-        self.rest.post_device(data)
+        try:
+            self.rest.post_device(data)
+        except Exception as e:
+            if self.debug:
+                self.logger.exception(e)
 
 
 class Splunker():
-    def __init__(self,host, port, username, password, timeframe, debug, verbose):
+    def __init__(self,host, port, username, password, timeframe, debug, verbose, logger):
         self.host       = host
         self.port       = port
         self.user       = username
         self.pasw       = password
         self.debug      = debug
         self.verbose    = verbose
+        self.logger     = logger
         self.hosts      = []
         self.service    = None
         self.kwargs     = {"earliest_time": timeframe, "latest_time": "now", "search_mode": "normal"}
@@ -43,9 +46,12 @@ class Splunker():
         try:
             self.service = client.connect(host=self.host, port=self.port, username=self.user, password=self.pasw)
         except Exception as e:
-            msg = str(e)
+            msg  =  '[!] Error: %s' % str(e)
             if self.verbose:
-                print '[!] Error: %s' % msg
+                print msg
+            if self.debug:
+                self.logger.exception(msg)
+
 
     def get_host_names(self):
         searchx = "search host| dedup host | table host"
@@ -70,9 +76,11 @@ class Splunker():
                         raw =  result['_raw']
                         if self.verbose:
                             print '\n\n'+'='*80
+                            print '{0:21} {1}'.format('Host name',device_name)
                         raw_data = self.process_raw_data(raw)
                         if raw_data:
                             host_data.update(raw_data)
+
                 nic_data = self.get_nic_data(host_name)
                 if nic_data:
                     host_data.update(nic_data)
@@ -100,15 +108,19 @@ class Splunker():
                     hw_data.update({'cpupower':cpupower})
                     hw_data.update({'cpucount':1})
                 except Exception as e:
+                    if self.debug:
+                        self.logger.exception(e)
                     pass
             if key == 'cpu_count':
                 cpucore = int(value.strip())
                 hw_data.update({'cpucore':cpucore})
             if key == 'memory_real':
                 try:
-                    memory = int(value.split()[0].strip()) /1024
+                    memory = int(value.split()[0].strip()) / 1024
                     hw_data.update({'memory':memory})
-                except:
+                except Exception as e:
+                    if self.debug:
+                        self.logger.exception(e)
                     pass
             if key == 'hard_drives':
                 hdds_raw = [ x for x in value.split(';') if x]
@@ -134,7 +146,9 @@ class Splunker():
                     if self.verbose:
                         print result['_raw'].split()[0:4]
                     nic_data.update({'macaddress':nic_mac})
-                except:
+                except Exception as e:
+                    if self.debug:
+                        self.logger.exception(e)
                     pass
         return nic_data
 
@@ -150,9 +164,48 @@ class Splunker():
                     return {'os': result['os']}
 
 
+def get_config():
+    cc = ConfigParser.RawConfigParser()
+    if os.path.isfile(CONFIGFILE):
+        cc.readfp(open(CONFIGFILE,"r"))
+    else:
+        print '\n[!] Cannot find config file. Exiting...'
+        sys.exit()
+
+    # splunk
+    HOST        = cc.get('splunk', 'HOST')
+    PORT        = cc.get('splunk', 'PORT')
+    USERNAME    = cc.get('splunk', 'USERNAME')
+    PASSWORD    = cc.get('splunk', 'PASSWORD')
+    TIME_FRAME  = cc.get('splunk', 'TIME_FRAME')
+
+    # device42
+    D42_URL     = cc.get('device42', 'D42_URL')
+    D42_USER    = cc.get('device42', 'D42_USER')
+    D42_PASS    = cc.get('device42', 'D42_PASS')
+    DRY_RUN     = cc.getboolean('device42', 'DRY_RUN')
+
+    # other
+    DEBUG_FILE  = cc.get('other', 'DEBUG_FILE')
+    DEBUG       = cc.getboolean('other', 'DEBUG')
+    VERBOSE     = cc.getboolean('other', 'VERBOSE')
+
+    return HOST, int(PORT), USERNAME, PASSWORD, TIME_FRAME, D42_URL, D42_USER, D42_PASS, DRY_RUN, DEBUG, DEBUG_FILE, VERBOSE
+
+
 if __name__ == '__main__':
-    sp = Splunker(HOST, PORT, USERNAME, PASSWORD, TIME_FRAME, DEBUG, VERBOSE)
-    d42 = Device42(D42_URL, D42_USER, D42_PASS, DEBUG)
+    HOST, PORT, USERNAME, PASSWORD, TIME_FRAME, D42_URL, D42_USER, D42_PASS, DRY_RUN, DEBUG, DEBUG_FILE, VERBOSE = get_config()
+    DEBUG_LOG = os.path.join(APP_DIR, DEBUG_FILE)
+
+    logger = None
+
+    if DEBUG:
+        logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.DEBUG, filename=DEBUG_LOG)
+
+    sp   = Splunker(HOST, PORT, USERNAME, PASSWORD, TIME_FRAME, DEBUG, VERBOSE, logger)
+    d42  = Device42(D42_URL, D42_USER, D42_PASS, DEBUG, VERBOSE, DRY_RUN, logger)
+
     sp.connect()
     if sp.service:
         sp.get_host_names()
