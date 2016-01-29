@@ -30,6 +30,7 @@ class Rest():
                 r = requests.post(url, data=payload, headers=headers, verify=False)
             except Exception as e:
                 self.logger.exception(e)
+                print e
                 sys.exit()
 
             else:
@@ -59,7 +60,8 @@ class Rest():
             msg =  '\r\nPosting IP data to %s ' % url
             if self.verbose:
                 print msg
-            self.uploader(data, url)
+            result = self.uploader(data, url)
+            return result
 
     def post_mac(self, data):
         if self.dry_run == False:
@@ -67,7 +69,8 @@ class Rest():
             msg = '\r\nPosting MAC data to %s ' % url
             if self.verbose:
                 print msg
-            self.uploader(data, url)
+            result = self.uploader(data, url)
+            return result
 
     def post_parts(self, data):
         if self.dry_run == False:
@@ -75,6 +78,6 @@ class Rest():
             msg = '\r\nPosting HDD parts to %s ' % url
             if self.verbose:
                 print msg
-            self.uploader(data, url)
-
+            result = self.uploader(data, url)
+            return result
 

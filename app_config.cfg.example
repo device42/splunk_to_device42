@@ -29,5 +29,3 @@ DEBUG       = True
 DEBUG_FILE  = debug.log
 # write to STDOUT (True) or not (False)
 VERBOSE     = True
-
-
