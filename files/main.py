@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 
 import ConfigParser
-import json
-import logging
 import os
 import sys
 
@@ -12,12 +10,10 @@ import splunklib.results as results
 from util_uploader import Rest
 
 
-APP_DIR    = os.path.abspath(os.path.dirname(__file__))
-CONFIGFILE = os.path.join(APP_DIR, 'app_config.cfg')
-APP_MAPPER = os.path.join(APP_DIR, 'app_mapper.cfg')
-
-
 class Device42():
+    """
+    Wrapper around util_uploader.py (code that actually uploads data to Device42).
+    """
     def __init__(self, url, user, pwd, debug, verbose, dry_run, logger):
         self.rest   = Rest(url, user, pwd, debug, verbose, dry_run, logger)
         self.debug  = debug
@@ -46,7 +42,11 @@ class Device42():
 
 
 class Mapper():
-    def __init__(self):
+    """
+    Read app_mapper.cfg file, clean up data obtained from Splunk, map parameter names to Device42 parameter names,
+    format the data as Device42 likes it.
+    """
+    def __init__(self, APP_MAPPER):
         """
         init
         :return:
@@ -77,8 +77,6 @@ class Mapper():
         :param kwargs: Custom Splunk params
         :return:
         """
-
-
         self.data.clear()
         for key, value in kwargs.iteritems():
             if key in self.mapping:
@@ -164,9 +162,23 @@ class Mapper():
         return all_data
 
 
-
 class Splunker(object):
+    """
+    Obtain host names from Splunk. Device42 is based on concept that every device must have the name.
+    """
     def __init__(self, host, port, username, password, timeframe, debug, verbose, logger):
+        """
+        init
+        :param host:
+        :param port:
+        :param username:
+        :param password:
+        :param timeframe:
+        :param debug:
+        :param verbose:
+        :param logger:
+        :return:
+        """
         self.host       = host
         self.port       = port
         self.user       = username
@@ -179,6 +191,10 @@ class Splunker(object):
         self.kwargs     = {"earliest_time": timeframe, "latest_time": "now", "search_mode": "normal"}
 
     def connect(self):
+        """
+        Connect to Splunk
+        :return:
+        """
         try:
             self.service = client.connect(host=self.host, port=self.port, username=self.user, password=self.pasw)
         except Exception as e:
@@ -189,6 +205,10 @@ class Splunker(object):
                 self.logger.exception(msg)
 
     def get_host_names(self):
+        """
+        Get host names from Splunk
+        :return:
+        """
         searchx = "search host| dedup host | table host"
         res_ex  = self.service.jobs.export(searchx, **self.kwargs)
         reader  = results.ResultsReader(res_ex)
@@ -198,63 +218,45 @@ class Splunker(object):
                     self.hosts.append(result['host'])
 
 
-
 class DataParser():
-    def get_data(self, host, port, username, password, timeframe, verbose):
+    """
+    Actually, we do not parse Splunk data here. You do that in your recipe_*.py.
+    This class sends data obtained from Splunk to Mapper class for mapping and formatting.
+    Then, we send nicely formatted data to Device42 class which uploads it to ...well...Device42 of course :)
+    """
+    def __init__(self, mapper, device42):
+        """
+        init
+        :param mapper:
+        :param device42:
+        :return:
+        """
+        self.mapper   = mapper
+        self.device42 = device42
+
+    def parser(self, data):
+        """
+        Splunk data to Device42 format
+        :param data: Data obtained from Splunk
+        :return:
+        """
+        if isinstance(data, dict):
+            self.mapper.set_data(**data)
+
+            all_data = self.mapper.d42_formatter()
+            dev_data = all_data['dev_data']
+            ip_data  = all_data['ip_data']
+            mac_data = all_data['mac_data']
+
+            if dev_data:
+                self.device42.upload_device(dev_data)
+            if ip_data:
+                self.device42.upload_ip(ip_data)
+            if mac_data:
+                self.device42.upload_mac(mac_data)
 
 
-
-
-
-        # ----------------- YOUR CODE STARTS HERE ------------------------------
-        from recipe_nix_add_on import Nix_Linux_add_on
-        nix = Nix_Linux_add_on(host, port, username, password, timeframe, verbose)
-        for device in splunker.hosts:
-            data = nix.get_data(device)
-
-        # ----------------- YOUR CODE ENDS HERE --------------------------------
-
-
-
-
-            """ # test data
-            data = {'device_name':'linux01',
-                    'serial':'123456789',
-                    'os':'Linux Mint',
-                    'version':'17.2',
-                    'ram':'16 Gb',
-                    'cpunum':'1',
-                    'cpuspeed':'4.7Mhz',
-                    'num_of_cores':'8',
-                    'num_of_hdds':'1',
-                    'hdd_size':'1TB',
-                    'mac':'06:86:a6:18:8a:0e',
-                    'ip':'192.168.3.30',
-                    'nic_name' : 'eth2'}
-            """
-
-            if isinstance(data, dict):
-                mapper.set_data(**data)
-
-                all_data = mapper.d42_formatter()
-                dev_data = all_data['dev_data']
-                ip_data  = all_data['ip_data']
-                mac_data = all_data['mac_data']
-
-                if dev_data:
-                    #print json.dumps(dev_data, indent=4)
-                    device42.upload_device(dev_data)
-                if ip_data:
-                    #print json.dumps(ip_data, indent=4)
-                    device42.upload_ip(ip_data)
-                if mac_data:
-                    #print json.dumps(mac_data, indent=4)
-                    device42.upload_mac(mac_data)
-
-
-
-
-def get_config():
+def get_config(CONFIGFILE):
     cc = ConfigParser.RawConfigParser()
     if os.path.isfile(CONFIGFILE):
         cc.readfp(open(CONFIGFILE,"r"))
@@ -280,30 +282,7 @@ def get_config():
     DEBUG       = cc.getboolean('other', 'DEBUG')
     VERBOSE     = cc.getboolean('other', 'VERBOSE')
 
+    TIME_FRAME  = "-"+TIME_FRAME+"h"
     return HOST, int(PORT), USERNAME, PASSWORD, TIME_FRAME, D42_URL, D42_USER, D42_PASS, DRY_RUN, DEBUG, DEBUG_FILE, VERBOSE
-
-
-if __name__ == '__main__':
-    HOST, PORT, USERNAME, PASSWORD, TIME_FRAME, D42_URL, D42_USER, D42_PASS, DRY_RUN, DEBUG, DEBUG_FILE, VERBOSE = get_config()
-    DEBUG_LOG = os.path.join(APP_DIR, DEBUG_FILE)
-
-    logger = None
-
-    if DEBUG:
-        logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.DEBUG, filename=DEBUG_LOG)
-
-    mapper   = Mapper()
-    mapper.populate_map()
-    splunker = Splunker(HOST, PORT, USERNAME, PASSWORD, TIME_FRAME, DEBUG, VERBOSE, logger)
-    device42 = Device42(D42_URL, D42_USER, D42_PASS, DEBUG, VERBOSE, DRY_RUN, logger)
-    dparser  = DataParser()
-
-    splunker.connect()
-    if splunker.service:
-        splunker.get_host_names()
-        dparser.get_data(HOST, PORT, USERNAME, PASSWORD, TIME_FRAME, VERBOSE)
-
-
 
 
