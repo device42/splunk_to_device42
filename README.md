@@ -2,7 +2,7 @@
 
 This repository contains a sample script to take inventory data from a Splunk installation and send it to a Device42 appliance using the REST APIs.
 
-## Getting started with the Splunk to Device42 script.
+### Getting started with the Splunk to Device42 script.
 
 The sample script provided is named starter.py.  Before you can run the script, you need to do 4 things:
 
