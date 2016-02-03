@@ -6,7 +6,7 @@ This repository contains a sample script to take inventory data from a Splunk in
 
 The sample script provided is named starter.py.  Before you can run the script, you need to do 4 things:
 
-1.	 Enter IP and authorization information into a config file.  The sample script assumes the config file is named main.cfg and is located in the same directory as the starter.py file.  The  main.cfg file contains IP information and credentials for both the Splunk and Device42 instances and a few other parameters.  See main.cfg for definitions of the required parameters.
+1.	 Enter IP and authorization information into a config file.  The sample script assumes the config file is named main.cfg and is located in the same directory as the starter.py file.  The main.cfg file contains IP information and credentials for both the Splunk and Device42 instances and a few other parameters.  See main.cfg for definitions of the required parameters.
 
 2.	Create a Splunk recipe that accesses Splunk data and returns a python dict structure.  A sample script is provided (recipe_nix_add_on.py in the recipes folder) that uses the Splunk ["Add-on for Unix and Linux"](https://splunkbase.splunk.com/app/833/).  This recipe will fetch Linux/Unix hardware info from Splunk and return a python dict.
 
