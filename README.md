@@ -34,6 +34,10 @@ The provided recipe consumes the parameters found in the [splunk] section of the
 
 3.	Provide a mapping file (app_mapper.cfg in the same directory as starter.py) that specifies how your python dict keys (see above) map to Device42 field names.  A sample app_mapper.cfg is provided.  The contents of app_mapper.cfg are:
 
+
+```
+#!python
+
 		name		device_name
 		serial_no	serial
 		os			os
@@ -47,6 +51,8 @@ The provided recipe consumes the parameters found in the [splunk] section of the
 		macaddress	mac
 		ipaddress	ip
 		label		nic_name
+
+```
 
 This is one-to-one mapping between Device42 parameter names (left column) and the keys from your python dict (right column).  The keys must not contain spaces. Either spaces or tabs can be used to separate the left and right columns.
 
