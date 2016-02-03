@@ -44,7 +44,7 @@ The provided recipe consumes the parameters found in the [splunk] section of the
 
 This is one-to-one mapping between Device42 parameter names (left column) and the keys from your python dict (right column).  The keys must not contain spaces. Either spaces or tabs can be used to separate the left and right columns.
 
-4.  Modify the provided starter.py.  All you need to do is replace the recipe import with your own recipe import.  (Look for ----------YOUR CODE STARTS HERE-------------).
+4.  Modify the provided starter.py.  All you need to do is replace the recipe import with your own recipe import.  (Look for -----YOUR CODE STARTS HERE------).
 
 You're ready to go.  Run the starter.py script and you should see your data appear in Device42!
 
