@@ -6,37 +6,7 @@ This repository contains a sample script to take inventory data from a Splunk in
 
 The sample script provided is named starter.py.  Before you can run the script, you need to do 4 things:
 
-1.	 Enter IP and authorization information into a config file.  The sample script assumes the config file is named main.cfg and is located in the same directory as the starter.py file.  The  main.cfg file contains the following parameters:
-
-	[splunk]
-	# Splunk host
-	HOST        = splunk.test.lab
-	# Splunk port
-	PORT        = 8089
-	# Splunk server username
-	USERNAME    = admin
-	# Splunk server password
-	PASSWORD    = cant_guess
-	# search runs from TIME_FRAME hours in the past to now()
-	TIME_FRAME  = 24
-	
-	[device42]
-	# device42 url (url starts with HTTPS!)
-	D42_URL     = https://192.168.1.100
-	# Device42 server username
-	D42_USER    = admin
-	# Device42 server password
-	D42_PASS    = adm!nd42
-	# Upload to Device42 or not?
-	DRY_RUN		= False
-	
-	[other]
-	# write to debug log (True) or not (False)
-	DEBUG       = True
-	# name of the debug log file (no path, just file name!)
-	DEBUG_FILE  = debug.log
-	# write to STDOUT (True) or not (False)
-	VERBOSE     = True
+1.	 Enter IP and authorization information into a config file.  The sample script assumes the config file is named main.cfg and is located in the same directory as the starter.py file.  The  main.cfg file contains IP information and credentials for both the Splunk and Device42 instances and a few other parameters.  See main.cfg for definitions of the required parameters.
 
 2.	Create a Splunk recipe that accesses Splunk data and returns a python dict structure.  A sample script is provided (recipe_nix_add_on.py in the recipes folder) that uses the Splunk ["Add-on for Unix and Linux"](https://splunkbase.splunk.com/app/833/).  This recipe will fetch Linux/Unix hardware info from Splunk and return a python dict.
 
