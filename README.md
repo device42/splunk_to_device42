@@ -11,9 +11,7 @@ The sample script provided is named starter.py.  Before you can run the script, 
 2.	Create a Splunk recipe that accesses Splunk data and returns a python dict structure.  A sample recipe is provided (recipe_nix_add_on.py in the recipes folder) that uses the Splunk ["Add-on for Unix and Linux"](https://splunkbase.splunk.com/app/833/).  This recipe will fetch Linux/Unix hardware info from Splunk and return a python dict.
 
 
-```
-#!python
-
+    
 		data = {'device_name':'linux01',
 				'serial':'123456789',
 				'os':'Linux Mint',
@@ -28,16 +26,14 @@ The sample script provided is named starter.py.  Before you can run the script, 
 				'ip':'192.168.3.30',
 				'nic_name' : 'eth2'}
 
-```
+    
 
-The provided recipe consumes the parameters found in the [splunk] section of the main.cfg file shown above but this is not a requirement.  If you wish to hard-code these parameters in your recipe file, that will work fine also.  However, please be aware that the parameters in the other sections (e.g. Device42 credentials) must still be supplied.				
+    The provided recipe consumes the parameters found in the [splunk] section of the main.cfg file shown above but this is not a requirement.  If you wish to hard-code these parameters in your recipe file, that will work fine also.  However, please be aware that the parameters in the other sections (e.g. Device42 credentials) must still be supplied.				
 
 3.	Provide a mapping file (app_mapper.cfg in the same directory as starter.py) that specifies how your python dict keys (see above) map to Device42 field names.  A sample app_mapper.cfg is provided.  The contents of app_mapper.cfg are:
 
 
-```
-#!python
-
+    
 		name		device_name
 		serial_no	serial
 		os			os
@@ -52,9 +48,9 @@ The provided recipe consumes the parameters found in the [splunk] section of the
 		ipaddress	ip
 		label		nic_name
 
-```
+    
 
-This is one-to-one mapping between Device42 parameter names (left column) and the keys from your python dict (right column).  The keys must not contain spaces. Either spaces or tabs can be used to separate the left and right columns.
+    This is one-to-one mapping between Device42 parameter names (left column) and the keys from your python dict (right column).  The keys must not contain spaces. Either spaces or tabs can be used to separate the left and right columns.
 
 4.  Modify the provided starter.py.  All you need to do is replace the recipe import with your own recipe import.  (Look for -----YOUR CODE STARTS HERE------).
 
