@@ -10,6 +10,10 @@ The sample script provided is named starter.py.  Before you can run the script, 
 
 2.	Create a Splunk recipe that accesses Splunk data and returns a python dict structure.  A sample recipe is provided (recipe_nix_add_on.py in the recipes folder) that uses the Splunk ["Add-on for Unix and Linux"](https://splunkbase.splunk.com/app/833/).  This recipe will fetch Linux/Unix hardware info from Splunk and return a python dict.
 
+
+```
+#!python
+
 		data = {'device_name':'linux01',
 				'serial':'123456789',
 				'os':'Linux Mint',
@@ -23,6 +27,8 @@ The sample script provided is named starter.py.  Before you can run the script, 
 				'mac':'06:86:a6:18:8a:0e',
 				'ip':'192.168.3.30',
 				'nic_name' : 'eth2'}
+
+```
 
 The provided recipe consumes the parameters found in the [splunk] section of the main.cfg file shown above but this is not a requirement.  If you wish to hard-code these parameters in your recipe file, that will work fine also.  However, please be aware that the parameters in the other sections (e.g. Device42 credentials) must still be supplied.				
 
